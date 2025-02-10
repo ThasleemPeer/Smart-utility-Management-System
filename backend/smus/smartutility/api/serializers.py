@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import WorkerProfile
-
+from django.contrib.auth import authenticate
 User = get_user_model()
 
 # User Registration Serializer
@@ -18,21 +18,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 # Login Serializer (Generates JWT Token)
+from rest_framework import serializers
+
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = User.objects.filter(username=data['username']).first()
-        if user and user.check_password(data['password']):
-            refresh = RefreshToken.for_user(user)
-            return {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user_type': user.user_type
-            }
-        raise serializers.ValidationError("Invalid credentials")
+        email = data.get("email")
+        password = data.get("password")
 
+        if not email or not password:
+            raise serializers.ValidationError("Both email and password are required.")
+
+        return data
 # Worker Profile Serializer
 class WorkerProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -66,3 +65,19 @@ class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = ['id', 'user', 'worker', 'status', 'timestamp']
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "password", "username"]
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            email=validated_data["email"],
+            username=validated_data.get("username", ""),
+        )
+        user.set_password(validated_data["password"])  # Hash password
+        user.save()
+        return user

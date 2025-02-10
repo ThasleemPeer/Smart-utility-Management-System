@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 
-const Dashboard = () => {
+const WorkerDashboard = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
 
-    if (!storedUser || storedUser.user_type !== "client") {
+    if (!storedUser || storedUser.user_type !== "worker") {
       navigate("/", { replace: true });
     } else {
       setUser(storedUser);
@@ -22,11 +22,11 @@ const Dashboard = () => {
 
   return (
     <div>
-      <Header username={user.username } />
-      <h2>Client Dashboard</h2>
+      <Header username={user.username} />
+      <h2>Worker Dashboard</h2>
       <p>Welcome, {user.email}</p>
     </div>
   );
 };
 
-export default Dashboard;
+export default WorkerDashboard;

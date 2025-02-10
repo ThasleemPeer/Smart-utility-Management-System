@@ -14,6 +14,7 @@ urlpatterns = [
     path('workers/available/', get_available_workers, name="available-workers"),
     path('booking/request/', request_booking, name="request-booking"),
     path('booking/update/<int:booking_id>/', update_booking_status, name="update-booking"),
+    path("logout/", logout_user, name="logout"),
     path('', include(router.urls)),  # Includes all routes from the router
 ]
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
