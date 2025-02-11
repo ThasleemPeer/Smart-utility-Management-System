@@ -246,3 +246,39 @@ def logout_user(request):
         return Response({"message": "Logout successful"}, status=200)
     except Exception as e:
         return Response({"error": "Invalid token or request"}, status=400)
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Booking, WorkerProfile
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+
+@method_decorator(login_required, name="dispatch")
+def worker_requests(request, worker_id):
+    worker_profile = get_object_or_404(WorkerProfile, user_id=worker_id)
+
+    job_requests = Booking.objects.filter(worker=worker_profile, status="pending").values(
+        "id", "user__username", "user__phone", "status", "timestamp"
+    )
+
+    return JsonResponse(list(job_requests), safe=False)
+@csrf_exempt
+def request_action(request, request_id, action):
+    if request.method == "POST":
+        booking = get_object_or_404(Booking, id=request_id)
+
+        if action == "accept":
+            booking.status = "accepted"
+        elif action == "reject":
+            booking.status = "rejected"
+        else:
+            return JsonResponse({"error": "Invalid action"}, status=400)
+
+        booking.save()
+        return JsonResponse({"message": f"Request {action}ed successfully"})
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+

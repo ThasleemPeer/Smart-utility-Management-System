@@ -40,15 +40,20 @@ class WorkerProfileSerializer(serializers.ModelSerializer):
 from rest_framework import serializers
 from api.models import Booking
 
+from rest_framework import serializers
+from .models import WorkerProfile, Booking
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 class BookingSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)  # Show username instead of ID
+    user = serializers.StringRelatedField(read_only=True)
     worker = serializers.StringRelatedField(read_only=True)
-    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    scheduled_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'worker', 'status', 'created_at', 'updated_at', 'scheduled_time', 'notes']
+        fields = ['id', 'user', 'worker', 'status', 'scheduled_time', 'created_at', 'updated_at']
 
 
 from .models import WorkerProfile

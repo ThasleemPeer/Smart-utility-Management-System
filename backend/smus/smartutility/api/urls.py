@@ -25,3 +25,4 @@ urlpatterns += [
     path('update-fcm-token/', update_fcm_token, name="update-fcm-token"),
      path("api/login/", login_user, name="login"),
 ]
+
