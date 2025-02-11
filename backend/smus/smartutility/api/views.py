@@ -7,12 +7,11 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework_simplejwt.tokens import RefreshToken
 import math
 
-from .models import WorkerProfile, Worker, Booking
+from .models import WorkerProfile,  Booking
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     WorkerProfileSerializer,
-    WorkerSerializer,
     BookingSerializer,
 )
 from .utils import send_notification
@@ -23,21 +22,27 @@ User = get_user_model()
 # User Authentication Endpoints
 # =============================
 
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from .models import User, WorkerProfile
+from .serializers import RegisterSerializer
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        user = User.objects.get(email=request.data["email"])
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)  # Validate the data
 
-        # Automatically create a WorkerProfile for every new user
-        WorkerProfile.objects.get_or_create(user=user)
+        user = serializer.save()  # Save the user
 
-        return response
+        # Only create a WorkerProfile if the user is a worker
+        if user.user_type == "worker":
+            WorkerProfile.objects.get_or_create(user=user)
 
-
+        return Response(serializer.data, status=201)  # Return the created user data
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
@@ -131,6 +136,12 @@ class WorkerSearchView(generics.ListAPIView):
         return 2 * math.asin(math.sqrt(a)) * 6371  # Earth radius in km
 
 
+class WorkerProfileListView(generics.ListAPIView):
+    serializer_class = WorkerProfileSerializer
+
+    def get_queryset(self):
+        return WorkerProfile.objects.filter(is_available=True).select_related("user")
+
 # ==========================
 # Booking Management API
 # ==========================
@@ -189,11 +200,11 @@ def update_availability(request):
     return Response({"error": "Invalid request"}, status=400)
 
 
-@api_view(["GET"])
-def get_available_workers(request):
-    workers = Worker.objects.filter(is_available=True)
-    serializer = WorkerSerializer(workers, many=True)
-    return Response(serializer.data)
+# @api_view(["GET"])
+# def get_available_workers(request):
+#     workers = Worker.objects.filter(is_available=True)
+#     serializer = WorkerSerializer(workers, many=True)
+#     return Response(serializer.data)
 
 
 # =====================

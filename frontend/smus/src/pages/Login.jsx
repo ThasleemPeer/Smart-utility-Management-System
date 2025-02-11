@@ -17,23 +17,20 @@ const Login = () => {
         email,
         password,
       });
-      console.log(response.data)
-  
-   // Debugging
   
       if (response.status === 200) {
         if (response.data.access) {
           localStorage.setItem("access_token", response.data.access);
           localStorage.setItem("refresh_token", response.data.refresh);
-          
-          // Fix: Store correct user data
+  
+          // Store correct user data including username
           localStorage.setItem(
             "user",
             JSON.stringify({
               email: response.data.email,
               user_type: response.data.user_type,
               user_id: response.data.user_id,
-              
+              username: response.data.username,
             })
           );
   
@@ -54,8 +51,6 @@ const Login = () => {
       setError(err.response?.data?.error || "Invalid email or password");
     }
   };
-  
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">

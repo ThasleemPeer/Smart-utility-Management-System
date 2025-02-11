@@ -21,8 +21,8 @@ class WorkerProfile(models.Model):
     service_type = models.CharField(max_length=100)  # e.g., Plumber, Electrician
     hourly_rate_weekday = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     hourly_rate_weekend = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    location_lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    location_lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    location_lat = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
+    location_lng = models.DecimalField(max_digits=15, decimal_places=8, null=True, blank=True)
     is_available = models.BooleanField(default=True)
 
     def __str__(self):
@@ -54,16 +54,6 @@ class ChatMessage(models.Model):
     def __str__(self):
         return f"{self.sender} -> {self.receiver}: {self.message[:30]}"
 
-# Worker Model
-class Worker(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    category = models.CharField(max_length=255)
-    is_available = models.BooleanField(default=True)  # Toggle availability
-    working_hours = models.JSONField(default=dict)  # {"weekday": "9 AM - 6 PM", "weekend": "10 AM - 4 PM"}
-
-    def __str__(self):
-        return self.user.username
-    
 
 
 

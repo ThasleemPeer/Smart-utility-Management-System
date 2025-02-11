@@ -6,7 +6,7 @@ const Signup = () => {
     username: "",
     email: "",
     password: "",
-    user_type: "client",
+    user_type: "user", // Ensure this is included
     phone: "",
   });
   const [error, setError] = useState("");
@@ -19,6 +19,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    console.log(formData);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/register/", {
@@ -30,9 +31,9 @@ const Signup = () => {
       const data = await response.json();
       if (response.ok) {
         alert("Signup successful! Please log in.");
-        navigate("/dashboard");
+        navigate("/"); // Redirect to login page
       } else {
-        setError(data.error || "Signup failed.");
+        setError(data.error || console.log(data.error));
       }
     } catch (err) {
       setError("Something went wrong. Try again.");

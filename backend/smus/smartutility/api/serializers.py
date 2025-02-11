@@ -51,14 +51,26 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'worker', 'status', 'created_at', 'updated_at', 'scheduled_time', 'notes']
 
 
+from .models import WorkerProfile
+
 from rest_framework import serializers
-from .models import Worker
+from .models import WorkerProfile
 
-class WorkerSerializer(serializers.ModelSerializer):
+class WorkerProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)  # 🔥 Include username
+
     class Meta:
-        model = Worker
-        fields = ['id', 'user', 'category', 'is_available', 'working_hours']
-
+        model = WorkerProfile
+        fields = [
+            "id",
+            "username",  # 🔥 Add worker's name
+            "service_type",  # 🔥 Include service type
+            "hourly_rate_weekday",
+            "hourly_rate_weekend",
+            "location_lat",
+            "location_lng",
+            "is_available",
+        ]
 
 
 class BookingSerializer(serializers.ModelSerializer):
@@ -66,18 +78,15 @@ class BookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = ['id', 'user', 'worker', 'status', 'timestamp']
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+from rest_framework import serializers
+from .models import User
 
+class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "password", "username"]
+        fields = ["username", "email", "password", "phone", "user_type"]
+        extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
-        user = User.objects.create(
-            email=validated_data["email"],
-            username=validated_data.get("username", ""),
-        )
-        user.set_password(validated_data["password"])  # Hash password
-        user.save()
+        user = User.objects.create_user(**validated_data)
         return user
