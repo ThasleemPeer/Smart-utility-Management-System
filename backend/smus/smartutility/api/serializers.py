@@ -49,11 +49,10 @@ User = get_user_model()
 class BookingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     worker = serializers.StringRelatedField(read_only=True)
-    scheduled_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'worker', 'status', 'scheduled_time', 'created_at', 'updated_at']
+        fields = '__all__'
 
 
 from .models import WorkerProfile
@@ -78,10 +77,24 @@ class WorkerProfileSerializer(serializers.ModelSerializer):
         ]
 
 
+from rest_framework import serializers
+from .models import Booking
+
 class BookingSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="user.username", read_only=True)
+    worker_name = serializers.CharField(source="worker.user.username", read_only=True)
+    date = serializers.SerializerMethodField()
+    time = serializers.SerializerMethodField()
+
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'worker', 'status', 'timestamp']
+        fields = ['id', 'user', 'worker', 'user_name', 'worker_name', 'status', 'timestamp', 'date', 'time']
+
+    def get_date(self, obj):
+        return obj.timestamp.date()  # Extracts only the date part
+
+    def get_time(self, obj):
+        return obj.timestamp.time().strftime('%H:%M:%S')  # Formats the time part
 
 from rest_framework import serializers
 from .models import User

@@ -152,18 +152,6 @@ class BookingViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def request_booking(request):
-    """Booking request function (keeping URL unchanged)."""
-    worker_id = request.data.get("worker_id")
-    if not worker_id:
-        return Response({"error": "Worker ID is required"}, status=400)
-
-    worker = get_object_or_404(WorkerProfile, id=worker_id)
-    booking = Booking.objects.create(user=request.user, worker=worker, status="pending")
-    
-    return Response({"message": "Booking request sent!", "booking_id": booking.id}, status=201)
 
 
 @api_view(["PATCH"])
@@ -320,3 +308,74 @@ def update_worker_by_email(request, email):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_booking(request, worker_id):
+    print("Received Data:", request.data)  # Debugging Line
+    
+    worker = get_object_or_404(WorkerProfile, id=worker_id)
+    data = request.data.copy()
+    data['worker'] = worker.id  # Ensure worker ID is included in request data
+    data['user'] = request.user.id  # Automatically associate user
+    
+    serializer = BookingSerializer(data=data)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    print("Errors:", serializer.errors)  # Debugging Line
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from .models import Booking, WorkerProfile
+from .serializers import BookingSerializer
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def worker_bookings(request):
+    """Get all bookings for a specific worker based on worker_id"""
+    worker_id = request.GET.get('worker_id')  # Get worker_id from request
+
+    if not worker_id:
+        return Response({'error': 'Worker ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Ensure the worker exists
+    worker_profile = get_object_or_404(WorkerProfile, id=worker_id)
+
+    # Fetch bookings for this specific worker
+    bookings = Booking.objects.filter(worker=worker_profile).order_by('-timestamp')
+
+    return Response({
+        'count': bookings.count(),
+        'bookings': BookingSerializer(bookings, many=True).data
+    }, status=status.HTTP_200_OK)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_booking_status(request, booking_id):
+    """Update booking status (worker accept/reject)"""
+    try:
+        worker_profile = request.user.worker_profile
+    except WorkerProfile.DoesNotExist:
+        return Response({'error': 'User is not a worker'}, status=status.HTTP_403_FORBIDDEN)
+    
+    booking = get_object_or_404(Booking, id=booking_id, worker=worker_profile)
+    
+    new_status = request.data.get('status', '').lower()
+    if new_status not in ['accepted', 'rejected']:
+        return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    booking.status = new_status
+    booking.save()
+    
+    return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
+   

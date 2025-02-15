@@ -14,11 +14,14 @@ urlpatterns = [
     path('worker-search/', WorkerSearchView.as_view(), name='worker-search'),
     path('worker/availability/', update_availability, name="update-availability"),
     path('workers/available/', WorkerProfileListView.as_view(), name="available-workers"),
-    path('booking/request/', request_booking, name="request-booking"),
-    path('booking/update/<int:booking_id>/', update_booking_status, name="update-booking"),
-    path("logout/", logout_user, name="logout"),
+    path('logout/', logout_user, name="logout"),
     path('worker/<int:worker_id>/', get_worker_by_id, name='get_worker_by_id'),
-     path("worker/<str:email>/update/", update_worker_by_email, name="update_worker_by_email"),
+    path('worker/<str:email>/update/', update_worker_by_email, name="update_worker_by_email"),
+    path('update-fcm-token/', update_fcm_token, name="update-fcm-token"),
+    path('booking/request/<int:worker_id>/', create_booking, name='create_booking'),
+    path('booking/update/<int:booking_id>/', update_booking_status, name='update_booking_status'),
+     path('api/bookings/', worker_bookings, name='worker-bookings'),
+    path('api/bookings/<int:booking_id>/status/', update_booking_status, name='update-booking-status'),
     path('', include(router.urls)),  # Includes all routes from the router
 
     # JWT Token Authentication
