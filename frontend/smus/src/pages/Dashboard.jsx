@@ -68,7 +68,7 @@ const Dashboard = () => {
   const getLocationName = async (lat, lng) => {
     // Skip invalid coordinates
     if (!lat || !lng || (lat === 0 && lng === 0)) {
-      return "Location not available";
+      return "Fetching....";
     }
 
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2`;
@@ -94,10 +94,10 @@ const Dashboard = () => {
       const { suburb, county, state_district, state } = data.address;
       const locationString = [suburb, county, state_district, state].filter(Boolean).join(', '); // Filter out empty strings
 
-      return locationString || "Location not available";
+      return locationString || "location unavailable";
     } catch (error) {
       console.error("Error fetching location name:", error);
-      return "Location not available";
+      return "Fetching....";
     }
   };
 
@@ -113,7 +113,7 @@ const Dashboard = () => {
           await new Promise(resolve => setTimeout(resolve, index * 500)); // Reduced delay to 0.5 seconds
 
           if (!worker.location_lat || !worker.location_lng) {
-            return { ...worker, location_name: "Location not available" };
+            return { ...worker, location_name: "Fetching..." };
           }
 
           const locationName = await getLocationName(worker.location_lat, worker.location_lng);
@@ -137,7 +137,6 @@ const Dashboard = () => {
     return () => clearTimeout(debounceTimer);
   }, [filteredWorkers]);
 
-
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white">
@@ -148,12 +147,12 @@ const Dashboard = () => {
 
   const getRandomImage = (service) => {
     const serviceImages = {
-      plumber: "https://plus.unsplash.com/premium_photo-1664299069577-11579b487e6c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      plumber: "https://plus.unsplash.com/premium_photo-1723514415971-b553e8ae2ad7?q=80&w=2014&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       electrician: "https://plus.unsplash.com/premium_photo-1661908782924-de673a5c6988?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       carpenter: "https://plus.unsplash.com/premium_photo-1663089188748-7321b4de4bf1?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       painter: "https://plus.unsplash.com/premium_photo-1677130461825-a6af681e401b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       mechanic: "https://images.unsplash.com/photo-1504222490345-c075b6008014?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      mover: "https://images.unsplash.com/photo-1603354350317-6fda7c08fa05?w=500&auto=format",
+      mover: "https://plus.unsplash.com/premium_photo-1726837271041-4df11ad1dab4?q=80&w=2064&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       housekeeper: "https://plus.unsplash.com/premium_photo-1677683510828-ab1a84faf6e6?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       cctvtechnician: "https://images.unsplash.com/photo-1589935447067-5531094415d1?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       actechnician: "https://plus.unsplash.com/premium_photo-1682126012378-859ca7a9f4cf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -229,10 +228,9 @@ const Dashboard = () => {
                     <div className="flex items-center text-gray-600 group-hover:text-orange-500 transition-colors duration-300">
                       <MapPin className="w-5 h-5 mr-2" />
                       <span className="text-sm font-medium">
-                        {worker.location_name || "Location not available"}
+                        {worker.location_name || "Fetching...."}
                       </span>
                     </div>
-
                     <div className="flex items-start text-gray-600">
                       <Clock className="w-5 h-5 mr-2 mt-1 text-orange-500" />
                       <div className="text-sm space-y-1">
@@ -242,13 +240,15 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <button
-                    className="mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 font-medium shadow-lg shadow-orange-200"
-                    onClick={() => alert(`Booking ${worker.username} for ${worker.service_type}`)}
-                  >
-                    <Phone className="w-5 h-5" />
-                    <span>Book Now</span>
-                  </button>
+                 
+                    <button
+                        className="mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 font-medium shadow-lg shadow-orange-200"
+                        onClick={() => navigate(`/worker/${worker.id}`)} // Navigate to WorkerDataDashboard with worker ID
+                    >
+                        <Phone className="w-5 h-5" />
+                        <span>Book Now</span>
+                    </button>
+
                 </div>
               </div>
             ))}

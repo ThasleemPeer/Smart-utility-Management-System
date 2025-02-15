@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework_simplejwt.tokens import RefreshToken
 import math
-
+from.serializers import *
 from .models import WorkerProfile,  Booking
 from .serializers import (
     RegisterSerializer,
@@ -282,3 +282,41 @@ def request_action(request, request_id, action):
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
+
+
+# fetch worker by id
+@api_view(['GET'])
+def get_worker_by_id(request, worker_id):
+    worker = get_object_or_404(WorkerProfile, id=worker_id)
+    serializer = WorkerProfileSerializer(worker)
+    return Response(serializer.data)
+
+# updating worker profile
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from .models import WorkerProfile
+from .serializers import WorkerProfileUpdateSerializer
+import json
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .models import WorkerProfile
+from .serializers import WorkerProfileUpdateSerializer
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_worker_by_email(request, email):
+    try:
+        worker = get_object_or_404(WorkerProfile, user__email=email)
+        serializer = WorkerProfileUpdateSerializer(worker, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse({"message": "Worker updated successfully!", "data": serializer.data}, status=200)
+        return JsonResponse({"error": serializer.errors}, status=400)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

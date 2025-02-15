@@ -95,3 +95,28 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+
+#worker details editing
+from rest_framework import serializers
+from .models import WorkerProfile
+
+class WorkerProfileUpdateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False)  # Optional username update
+
+    class Meta:
+        model = WorkerProfile
+        fields = ['username', 'hourly_rate_weekday', 'hourly_rate_weekend', 'is_available', 'service_type']
+
+    def update(self, instance, validated_data):
+        # Update username if provided
+        username = validated_data.pop('username', None)
+        if username:
+            instance.user.username = username
+            instance.user.save()
+
+        # Update WorkerProfile fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        instance.save()
+        return instance

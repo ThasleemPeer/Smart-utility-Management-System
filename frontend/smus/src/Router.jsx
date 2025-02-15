@@ -6,6 +6,7 @@ import Signup from "./pages/Signup";
 import FindWorkers from "./pages/FindWorkers"; // New Page
 import MyBookings from "./pages/MyBookings"; // New Page
 import WorkerDashboard from "./pages/WorkerDashboard";
+import WorkerDataDashboard from "./pages/WorkerDataDashboard";
 const router = createBrowserRouter([
   { path: "/home", element: <Home /> },
   { path: "/", element: <Login /> },
@@ -14,6 +15,7 @@ const router = createBrowserRouter([
   { path: "/find-workers", element: <FindWorkers /> }, // Add new route
   { path: "/my-bookings", element: <MyBookings /> }, // Add new route
   { path: "/worker-dashboard", element: <WorkerDashboard/> }, 
+ { path:"/worker/:workerId", element:<WorkerDataDashboard />}
 ]);
 
 const Router = () => {
