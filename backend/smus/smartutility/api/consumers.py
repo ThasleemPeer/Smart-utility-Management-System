@@ -3,43 +3,40 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        self.booking_id = self.scope['url_route']['kwargs']['booking_id']
+        self.room_group_name = f"chat_{self.booking_id}"
+        
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        pass  # Handle disconnection if needed
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        if not text_data:  # Check if the message is empty
-            print("Received empty message, ignoring...")
-            return
-        print("data", text_data)
+        data = json.loads(text_data)
+        sender = data.get('sender')
+        message = data.get('message')
 
-        try:
-            data = json.loads(text_data)
-            message = data.get("message", "")  # Extract message safely
+        # Don't override the sender from the frontend
+        # The commented code below was causing issues:
+        # user = self.scope.get("user")
+        # if user and user.is_authenticated:
+        #     sender = user.username  # This was overriding the sender
 
-            if message:
-                await self.send(text_data=json.dumps({"message": message}))  # Send response
-            else:
-                print("Received JSON without a message key")
+        # Only proceed if we have both sender and message
+        if sender and message:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "chat_message",
+                    "sender": sender,
+                    "message": message
+                }
+            )
 
-        except json.JSONDecodeError:
-            print("Received invalid JSON, ignoring...")
-
-class NotificationConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.user_id = self.scope["url_route"]["kwargs"]["user_id"]
-        self.group_name = f"notifications_{self.user_id}"
-
-        print(f"User {self.user_id} connecting to {self.group_name}")  # Debugging log
-
-        # Add to the group once
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
-        # Accept the connection once
-        await self.accept()  # This should be called only once
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
-
-    async def send_notification(self, event):
-        await self.send(text_data=json.dumps({"message": event["message"]}))
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps({
+            "sender": event["sender"],
+            "message": event["message"],
+            "type": "chat_message"
+        }))

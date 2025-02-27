@@ -94,8 +94,7 @@ class BookingSerializer(serializers.ModelSerializer):
         return obj.timestamp.date()  # Extracts only the date part
 
     def get_time(self, obj):
-        return obj.timestamp.time().strftime('%H:%M:%S')  # Formats the time part
-
+        return obj.timestamp.time().strftime('%H:%M:%S')
 from rest_framework import serializers
 from .models import User
 

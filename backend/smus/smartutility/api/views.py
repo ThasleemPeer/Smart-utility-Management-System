@@ -359,7 +359,7 @@ def worker_bookings(request):
         'bookings': BookingSerializer(bookings, many=True).data
     }, status=status.HTTP_200_OK)
 
-@api_view(['PATCH'])
+@api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_booking_status(request, booking_id):
     """Update booking status (worker accept/reject)"""
@@ -379,3 +379,4 @@ def update_booking_status(request, booking_id):
     
     return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
    
+

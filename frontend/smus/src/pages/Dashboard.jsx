@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Star, Clock, Phone, Search } from 'lucide-react';
+import { MapPin, Star, Clock, Phone, Search, List } from 'lucide-react';
 import Header from "../components/Header";
 
 const Dashboard = () => {
@@ -9,6 +9,9 @@ const Dashboard = () => {
   const [filteredWorkers, setFilteredWorkers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const [showBookings, setShowBookings] = useState(false);
+  const [bookings, setBookings] = useState([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -28,7 +31,6 @@ const Dashboard = () => {
         throw new Error("Failed to fetch workers");
       }
       const data = await response.json();
-      console.log(data)
       setWorkers(data);
       setFilteredWorkers(data); // Initialize filtered workers with all workers
     } catch (error) {
@@ -64,6 +66,23 @@ const Dashboard = () => {
     filterWorkers();
   }, [searchQuery, workers]);
 
+  //fetch bookings of user
+  const fetchBookings = async () => {
+    setIsLoadingBookings(true);
+    setShowBookings(true);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/bookings/");
+      if (!response.ok) throw new Error("Failed to fetch bookings");
+      const data = await response.json();
+     
+      const userBookings = data.filter(booking => booking.user_name === user.username);
+      setBookings(userBookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
 
   const getLocationName = async (lat, lng) => {
     // Skip invalid coordinates
@@ -117,7 +136,7 @@ const Dashboard = () => {
           }
 
           const locationName = await getLocationName(worker.location_lat, worker.location_lng);
-          console.log(locationName)
+  
           return { ...worker, location_name: locationName };
         })
       );
@@ -175,94 +194,150 @@ const Dashboard = () => {
             <h2 className="text-4xl font-bold text-gray-900 bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
               Find Your Service Provider
             </h2>
-            <div className="relative w-full md:w-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by service or location..."
-                className="w-full md:w-80 pl-10 pr-4 py-2 rounded-full border-2 border-orange-100 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+
+            <div className="flex gap-4 items-center">
+              <div className="relative w-full md:w-auto">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by service or location..."
+                  className="w-full md:w-80 pl-10 pr-4 py-2 rounded-full border-2 border-orange-100 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-full shadow-md hover:shadow-lg transition-all duration-200"
+                onClick={fetchBookings}
+              >
+                <List className="inline-block w-5 h-5 mr-2" />
+                My Bookings
+              </button>
             </div>
           </div>
         </div>
 
-        {filteredWorkers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredWorkers.map((worker) => (
-              <div
-                key={worker.id}
-                className="group bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-              >
-                {/* Image Section */}
-                <div className="relative h-56 w-full overflow-hidden">
-                  <img
-                    src={getRandomImage(worker.service_type)}
-                    alt={worker.service_type}
-                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-semibold">4.8</span>
-                    </div>
-                  </div>
+        {/* Conditionally render bookings or worker list */}
+        {showBookings ? (
+          isLoadingBookings ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading bookings...</p>
+            </div>
+          ) : bookings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {
+  bookings.map((booking) => (
+    <div key={booking.id} className="border p-4 rounded-lg shadow-md">
+      <p><strong>Service:</strong> {booking.service}</p>
+      <p><strong>Worker:</strong> {booking.worker_name}</p>
+      <p><strong>Status:</strong> {booking.status}</p>
+  
+      {booking.status === "accepted" && (
+        <button
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg"
+          onClick={() => navigate(`/chat/${booking.id}`, { 
+            state: { worker: booking.worker_name, user_type: "user" } 
+          })}
+        >
+          Chat
+        </button>
+      )}
+    </div>
+  ))
+  
+  
+}
+
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-white p-8 rounded-2xl shadow-md max-w-md mx-auto">
+                <div className="text-orange-500 mb-4">
+                  <Clock className="w-12 h-12 mx-auto" />
                 </div>
-
-                {/* Content Section */}
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-300">
-                        {worker.username}
-                      </h3>
-                      <p className="text-gray-600 capitalize font-medium">
-                        {worker.service_type || "No Service Type"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-600 group-hover:text-orange-500 transition-colors duration-300">
-                      <MapPin className="w-5 h-5 mr-2" />
-                      <span className="text-sm font-medium">
-                        {worker.location_name || "Fetching...."}
-                      </span>
-                    </div>
-                    <div className="flex items-start text-gray-600">
-                      <Clock className="w-5 h-5 mr-2 mt-1 text-orange-500" />
-                      <div className="text-sm space-y-1">
-                        <p className="font-medium">Weekday: <span className="text-orange-600">₹{worker.hourly_rate_weekday}/hr</span></p>
-                        <p className="font-medium">Weekend: <span className="text-orange-600">₹{worker.hourly_rate_weekend}/hr</span></p>
+                <p className="text-gray-600 text-lg font-medium">No bookings available.</p>
+                <p className="text-gray-400 mt-2">You haven't made any bookings yet!</p>
+              </div>
+            </div>
+          )
+        ) : (
+          filteredWorkers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredWorkers.map((worker) => (
+                <div
+                  key={worker.id}
+                  className="group bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                >
+                  {/* Image Section */}
+                  <div className="relative h-56 w-full overflow-hidden">
+                    <img
+                      src={getRandomImage(worker.service_type)}
+                      alt={worker.service_type}
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-semibold">4.8</span>
                       </div>
                     </div>
                   </div>
 
-                 
+                  {/* Content Section */}
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-orange-600 transition-colors duration-300">
+                          {worker.username}
+                        </h3>
+                        <p className="text-gray-600 capitalize font-medium">
+                          {worker.service_type || "No Service Type"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center text-gray-600 group-hover:text-orange-500 transition-colors duration-300">
+                        <MapPin className="w-5 h-5 mr-2" />
+                        <span className="text-sm font-medium">
+                          {worker.location_name || "Fetching...."}
+                        </span>
+                      </div>
+                      <div className="flex items-start text-gray-600">
+                        <Clock className="w-5 h-5 mr-2 mt-1 text-orange-500" />
+                        <div className="text-sm space-y-1">
+                          <p className="font-medium">Weekday: <span className="text-orange-600">₹{worker.hourly_rate_weekday}/hr</span></p>
+                          <p className="font-medium">Weekend: <span className="text-orange-600">₹{worker.hourly_rate_weekend}/hr</span></p>
+                        </div>
+                      </div>
+                    </div>
+
+
                     <button
-                        className="mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 font-medium shadow-lg shadow-orange-200"
-                        onClick={() => navigate(`/worker/${worker.id}`)} // Navigate to WorkerDataDashboard with worker ID
+                      className="mt-6 w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-4 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2 font-medium shadow-lg shadow-orange-200"
+                      onClick={() => navigate(`/worker/${worker.id}`)} // Navigate to WorkerDataDashboard with worker ID
                     >
-                        <Phone className="w-5 h-5" />
-                        <span>Book Now</span>
+                      <Phone className="w-5 h-5" />
+                      <span>Book Now</span>
                     </button>
 
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="bg-white p-8 rounded-2xl shadow-md max-w-md mx-auto">
-              <div className="text-orange-500 mb-4">
-                <Clock className="w-12 h-12 mx-auto" />
-              </div>
-              <p className=" text-gray-600 text-lg font-medium">No service providers available at the moment.</p>
-              <p className="text-gray-400 mt-2">Please check back later!</p>
+              ))}
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-white p-8 rounded-2xl shadow-md max-w-md mx-auto">
+                <div className="text-orange-500 mb-4">
+                  <Clock className="w-12 h-12 mx-auto" />
+                </div>
+                <p className=" text-gray-600 text-lg font-medium">No service providers available at the moment.</p>
+                <p className="text-gray-400 mt-2">Please check back later!</p>
+              </div>
+            </div>
+          )
         )}
       </main>
     </div>

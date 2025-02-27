@@ -9,7 +9,6 @@ function WorkerDataDashboard() {
     const [locationName, setLocationName] = useState("");
     const [bookingMessage, setBookingMessage] = useState(""); // New state for request feedback
 
-    console.log("worker id is :",workerId)
     useEffect(() => {
         fetch(`http://127.0.0.1:8000/api/worker/${workerId}`)
             .then(response => response.json())
@@ -23,6 +22,7 @@ function WorkerDataDashboard() {
                 setLoading(false);
             });
     }, [workerId]);
+    
 
     const fetchLocationName = async (latitude, longitude) => {
         try {
@@ -39,29 +39,54 @@ function WorkerDataDashboard() {
 
     // Function to request a worker
     const requestWorker = async () => {
+        const token = localStorage.getItem("access_token");
+        const userData = localStorage.getItem("user");
+    
+        if (!token) {
+            setBookingMessage("User not authenticated. Please log in.");
+            return;
+        }
+    
+        if (!userData) {
+            setBookingMessage("User data not found. Please log in again.");
+            return;
+        }
+    
+        const parsedUser = JSON.parse(userData);
+        const userId = parsedUser.user_id;
+        const requestBody = {
+            worker: parseInt(workerId), 
+            user: userId
+        };
+    
+      
         try {
             const response = await fetch(`http://127.0.0.1:8000/api/booking/request/${workerId}/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    worker_id: workerId, // Ensure worker_id is passed in the body
-                }),
+                body: JSON.stringify(requestBody),
             });
     
             const data = await response.json();
+           
+    
             if (response.ok) {
                 setBookingMessage("Booking request sent!");
             } else {
                 setBookingMessage(data.error || "Failed to send request.");
             }
         } catch (error) {
-            console.error("Error sending booking request:", error);
+            console.error("❌ Error sending booking request:", error);
             setBookingMessage("Something went wrong.");
         }
     };
+    
+    
+    
+    
     
 
     if (loading) return <p className="text-center text-gray-600">Loading...</p>;

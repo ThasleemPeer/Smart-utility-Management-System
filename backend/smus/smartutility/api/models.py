@@ -34,6 +34,8 @@ class Booking(models.Model):
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('rejected', 'Rejected'),
+        ('completed','Completed'),
+        ('ongoing','Ongoing'),
     ]
         
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bookings")

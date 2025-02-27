@@ -10,6 +10,7 @@ const Signup = () => {
     phone: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false); // New state for success message
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,6 +20,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess(false); // Reset success state
     console.log(formData);
 
     try {
@@ -29,11 +31,20 @@ const Signup = () => {
       });
 
       const data = await response.json();
+
       if (response.ok) {
-        alert("Signup successful! Please log in.");
-        navigate("/"); // Redirect to login page
+        setSuccess(true); // Show success message
+        setTimeout(() => {
+          navigate("/"); // Redirect to login page after 2 seconds
+        }, 2000);
       } else {
-        setError(data.error || console.log(data.error));
+        if (data.error) {
+          setError(data.error);
+        } else if (data.phone) {
+          setError(data.phone[0]);
+        } else {
+          setError("Signup failed. Please try again.");
+        }
       }
     } catch (err) {
       setError("Something went wrong. Try again.");
@@ -42,9 +53,31 @@ const Signup = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg relative">
         <h2 className="text-3xl font-bold text-center text-orange-600">Create an Account</h2>
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
+        {success && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 rounded-lg z-10">
+            <div className="text-center animate-success">
+              <svg
+                className="w-16 h-16 mx-auto text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <h3 className="text-2xl font-bold text-orange-600 mt-2">Welcome Aboard!</h3>
+              <p className="text-gray-600">Signup successful! Redirecting to login...</p>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="mt-4">
           <input
             type="text"
@@ -104,5 +137,18 @@ const Signup = () => {
     </div>
   );
 };
+
+// Add this custom CSS in your stylesheet (e.g., index.css)
+const customStyles = `
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); opacity: 1; }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+  .animate-success {
+    animation: bounceIn 0.8s ease-out;
+  }
+`;
 
 export default Signup;
